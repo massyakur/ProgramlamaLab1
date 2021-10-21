@@ -1,13 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 int count = 0;
-int *ogrNo, *offset;
+//int *ogrNo, *offset;
 
 typedef struct Kayit
 {
     int ogrNo;
     int dersKodu;
     int puan;
+    int offset;
 }ogrenci;
 
 void kayitOlustur()
@@ -40,20 +41,6 @@ void kayitOlustur()
     fclose(file);
     counter();
     indexDosyasiOlustur();
-}
-
-void diziYap()
-{
-    FILE *file;
-    int i;
-    ogrNo = (int*)calloc(count, sizeof(int));
-    offset = (int*)calloc(count, sizeof(int));
-    file = fopen("index.txt", "r");
-    for(i = 0; i<count; i++)
-    {
-        fscanf(file, "%d %d", &ogrNo[i], &offset[i]);
-    }
-    fclose(file);
 }
 
 void counter()
@@ -110,19 +97,27 @@ void kayitEkle()
 
 void kayitBul()
 {
-    diziYap();
+    //diziYap();
     ogrenci s1;
+    int *ogrNo, *offset;
     int search;
     printf("ARAMAK ICIN OGRENCI NO YAZINIZ : ");
     scanf("%d", &search);
 
-    FILE *file;
+    FILE *file, *file2;
 
     printf("\n======================================\n");
     printf("| Ogrenci No\tDers Kodu\tNotu |");
     printf("\n--------------------------------------\n");
-    file = fopen("kayitlar.bin", "rb");
-
+    ogrNo = (int*)calloc(count, sizeof(int));
+    offset = (int*)calloc(count, sizeof(int));
+    file = fopen("index.txt", "r");
+    for(int i = 0; i < count; i++)
+        {
+            fscanf(file, "%d %d", &ogrNo[i], &offset[i]);
+        }
+    fclose(file);
+    file2 = fopen("kayitlar.bin", "rb");
     int low = 0, high = count-1, mid = (low+high)/2;
     while(low<=high)
     {
@@ -131,8 +126,8 @@ void kayitBul()
         else if(ogrNo[mid]==search)
         {
             //Binary search ile ilk bulunan veri
-            fseek(file, offset[mid], SEEK_SET);
-            fread(&s1, sizeof(ogrenci), 1, file);
+            fseek(file2, offset[mid], SEEK_SET);
+            fread(&s1, sizeof(ogrenci), 1, file2);
             printf("| %*d %*d %*d  |\n", 7, s1.ogrNo, 12, s1.dersKodu, 12, s1.puan);
 
             for(int i=0; i<=high; i++) //Eger ayni ogrNo birden fazla varsa asagida yazilacaktir
@@ -141,8 +136,8 @@ void kayitBul()
                 {
                     if(mid != i)
                     {
-                        fseek(file, offset[i], SEEK_SET);
-                        fread(&s1, sizeof(ogrenci), 1, file);
+                        fseek(file2, offset[i], SEEK_SET);
+                        fread(&s1, sizeof(ogrenci), 1, file2);
                         printf("| %*d %*d %*d  |\n", 7, s1.ogrNo, 12, s1.dersKodu, 12, s1.puan);
                     }
                 }
@@ -160,7 +155,7 @@ void kayitBul()
         printf("|\t\t\t\t     |\n");
     }
     printf("======================================\n");
-    fclose(file);
+    fclose(file2);
 }
 
 void kayitSil()
@@ -312,18 +307,40 @@ void indeksDosyasiniSil()
 }
 void indexDosyasiOlustur()
 {
-    ogrenci s1;
+    ogrenci *s, s1;
     FILE *file, *file2;
+    int i=0, j;
     file = fopen("kayitlar.bin", "rb");
     file2 = fopen("index.txt", "w");
-    while(fread(&s1, sizeof(ogrenci), 1, file))
+    s = (ogrenci*)calloc(count, sizeof(ogrenci));
+    while(fread(&s[i], sizeof(ogrenci), 1, file))
     {
-        fprintf(file2, "%d\t%d\n", s1.ogrNo, ftell(file)-12);
+        s[i].offset = ftell(file)-sizeof(ogrenci);
+        i++;
     }
     fclose(file);
-    fclose(file2);
 
-    int i, j, temp, temp2;
+    for(i=0; i<count; i++)
+    {
+        for(j=i+1; j<count; j++)
+        {
+            if(s[i].ogrNo > s[j].ogrNo)
+            {
+                s1 = s[i];
+                s[i] = s[j];
+                s[j] = s1;
+            }
+        }
+    }
+    file2 = fopen("index.txt", "w");
+    for(i=0; i<count; i++)
+    {
+        fprintf(file2, "%d\t%d\n", s[i].ogrNo, s[i].offset);
+    }
+    fclose(file2);
+    printf("\nindex.txt BASARIYLA OLUSTURULMUSTUR!\n");
+
+    /*int i, j, temp, temp2;
     diziYap();
     file2 = fopen("index.txt", "r");
     for(i = 0; i<count; i++)
@@ -351,8 +368,7 @@ void indexDosyasiOlustur()
     {
         fprintf(file2, "%d\t%d\n", ogrNo[i], offset[i]);
     }
-    fclose(file2);
-    printf("\nindex.txt BASARIYLA OLUSTURULMUSTUR!\n");
+    */
 }
 
 int main()
@@ -414,5 +430,19 @@ int main()
     return 0;
 }
 
+
+/*void diziYap()
+{
+    FILE *file;
+    int i;
+    ogrNo = (int*)calloc(count, sizeof(int));
+    offset = (int*)calloc(count, sizeof(int));
+    file = fopen("index.txt", "r");
+    for(i = 0; i<count; i++)
+    {
+        fscanf(file, "%d %d", &ogrNo[i], &offset[i]);
+    }
+    fclose(file);
+}*/
 
 
