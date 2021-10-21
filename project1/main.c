@@ -207,47 +207,70 @@ void kayitGuncelle()
 {
     ogrenci s1;
     int search, found;
+    int *ogrNo, *offset;
+
     printf("PUAN DEGISTIRMEK ICIN OGRENCI NO YAZINIZ : ");
     scanf("%d", &search);
-    int ogrNo, offset;
+
     FILE *file, *file2, *file3;
-    //file = fopen("index.txt", "r");
-    file2 = fopen("kayitlar.bin", "rb");
-    file3 = fopen("temp.bin", "wb");
-    if(file==NULL)
-        printf("\nDOSYA BULUNAMADI!\n");
-    else
+
+    ogrNo = (int*)calloc(count, sizeof(int));
+    offset = (int*)calloc(count, sizeof(int));
+
+    file = fopen("index.txt", "r");
+    for(int i = 0; i < count; i++)
+        {
+            fscanf(file, "%d %d", &ogrNo[i], &offset[i]);
+        }
+    fclose(file);
+
+    file2 = fopen("kayitlar.bin", "rb+");
+
+    int low = 0, high = count-1, mid = (low+high)/2;
+    while(low<=high)
     {
-        while(fread(&s1, sizeof(ogrenci), 1, file2))
+        if(ogrNo[mid]<search)
+            low = mid+1;
+        else if(ogrNo[mid]==search)
         {
-            if(search==s1.ogrNo)
+            //Binary search ile ilk bulunan veri
+            fseek(file2, offset[mid], SEEK_SET);
+            fread(&s1, sizeof(ogrenci), 1, file2);
+            printf("Puan giriniz : ");
+            scanf("%d", &s1.puan);
+
+            fseek(file2, offset[mid], SEEK_SET);
+            fwrite(&s1, sizeof(ogrenci), 1, file2);
+
+            for(int i=0; i<=high; i++) //Eger ayni ogrNo birden fazla varsa asagida yazilacaktir
             {
-                found = 1;
-                printf("Puan giriniz : ");
-                scanf("%d", &s1.puan);
-                printf("\n");
+                if(search == ogrNo[i])
+                {
+                    if(mid != i)
+                    {
+                        fseek(file2, offset[mid], SEEK_SET);
+                        fread(&s1, sizeof(ogrenci), 1, file2);
+                        printf("Puan giriniz : ");
+                        scanf("%d", &s1.puan);
+                        fseek(file2, offset[mid], SEEK_SET);
+                        fwrite(&s1, sizeof(ogrenci), 1, file2);
+                    }
+                }
             }
-            fwrite(&s1, sizeof(ogrenci), 1, file3);
+            break;
         }
-        //fclose(file);
-        fclose(file2);
-        fclose(file3);
-        if(found)
-        {
-            file2 = fopen("kayitlar.bin", "wb");
-            file3 = fopen("temp.bin", "rb");
-            while(fread(&s1, sizeof(ogrenci), 1, file3))
-            {
-                fwrite(&s1, sizeof(ogrenci), 1, file2);
-            }
-            fclose(file2);
-            fclose(file3);
-        }
-        else{
-            printf("|%*d NOLU OGRENCI BULUNAMADI!   |\n", 8, search);
-        }
+        else
+        high = mid-1;
+        mid=(low+high)/2;
     }
-    indexDosyasiOlustur();
+    if(low>high)
+    {
+        printf("|\t\t\t\t     |\n");
+        printf("|%*d NOLU OGRENCI BULUNAMADI!   |\n", 8, search);
+        printf("|\t\t\t\t     |\n");
+    }
+    printf("======================================\n");
+    fclose(file2);
 
 
 }
