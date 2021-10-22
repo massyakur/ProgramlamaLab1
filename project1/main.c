@@ -139,6 +139,7 @@ void kayitEkle()
     fclose(file);
     free(s);
     counter();
+    printf("  %d tane kayit basariyla eklendi", n);
     indexDosyasiOlustur();
 }
 
@@ -288,8 +289,7 @@ void kayitSil()
             {
                 fwrite(&s[i], sizeof(ogrenci), 1, file2);
             }
-            counter();
-            indexDosyasiOlustur();
+            fclose(file2);
             break;
         }
         else
@@ -304,10 +304,12 @@ void kayitSil()
         printf("|\t\t\t\t     |\n");
         printf("======================================\n");
     }
-    fclose(file2);
+
     free(s);
     free(ogrNo);
     free(offset);
+    counter();
+    indexDosyasiOlustur();
 }
 
 void kayitGuncelle()
