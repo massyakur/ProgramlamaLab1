@@ -223,13 +223,14 @@ void kayitBul()
 
 void kayitSil()
 {
-    ogrenci s1;
-    int search, n;
+    ogrenci s1, *s;
+    int search, n=0, len=0, j=0;
     printf("SILMEK ICIN OGRENCI NO YAZINIZ : ");
     scanf("%d", &search);
     int *ogrNo, *offset;
     FILE *file, *file2, *file3;
     file = fopen("index.txt", "r");
+    s = (ogrenci*)calloc(count-1, sizeof(ogrenci));
     ogrNo = (int*)calloc(count, sizeof(int));
     offset = (int*)calloc(count, sizeof(int));
     for(int i = 0; i < count; i++)
@@ -237,8 +238,9 @@ void kayitSil()
             fscanf(file, "%d %d", &ogrNo[i], &offset[i]);
         }
     fclose(file);
+    len = sizeof(*offset)/sizeof(int)*count;
+
     file2 = fopen("kayitlar.bin", "rb");
-    file3 = fopen("temp.bin", "wb");
     int low = 0, high = count-1, mid = (low+high)/2;
     while(low<=high)
     {
@@ -246,41 +248,49 @@ void kayitSil()
             low = mid+1;
         else if(ogrNo[mid]==search)
         {
-            for(int i=4; i>0; i--)
+            for(int i=mid; i>0; i--)
             {
                 fseek(file2, offset[mid-i], SEEK_CUR);
                 fread(&s1, sizeof(ogrenci), 1, file2);
-                printf("%d %d %d %d\n", s1.ogrNo, s1.dersKodu, s1.puan, offset[mid]);
-                n = ftell(file2)/sizeof(ogrenci);
-                printf("%d\n", n);
+                //printf("%d %d %d %d\n", s1.ogrNo, s1.dersKodu, s1.puan, offset[mid-i]);
+                s[j].ogrNo = s1.ogrNo;
+                s[j].dersKodu = s1.dersKodu;
+                s[j].puan = s1.puan;
+                s[j].offset = offset[mid-i];
+                j++;
                 rewind(file2);
             }
-
-            /*while(fread(&s1, sizeof(ogrenci), 1, file2))
+            for(int i=mid; i<len-1; i++)
             {
-                fwrite(&s1, sizeof(ogrenci), 1, file3);
+                fseek(file2, offset[i+1], SEEK_CUR);
+                fread(&s1, sizeof(ogrenci), 1, file2);
+                //printf("%d %d %d %d\n", s1.ogrNo, s1.dersKodu, s1.puan, offset[i+1]);
+                s[j].ogrNo = s1.ogrNo;
+                s[j].dersKodu = s1.dersKodu;
+                s[j].puan = s1.puan;
+                s[j].offset = offset[i+1];
+                j++;
+                rewind(file2);
             }
-
-            fseek(file2, (offset[mid]+sizeof(ogrenci)), SEEK_CUR);
-            while(fread(&s1, sizeof(ogrenci), 1, file2)){
-                fwrite(&s1, sizeof(ogrenci), 1, file3);
-            }*/
-            /*for(int i=0; i<=high; i++) //Eger ayni ogrNo birden fazla varsa asagida yazilacaktir
+            fclose(file2);
+            for(int i=0; i<count-1; i++)
             {
-                if(search == ogrNo[i] && mid != i)
+                for(j=i+1; j<count-1; j++)
                 {
-
-                        fseek(file2, offset[i], SEEK_SET);
-                        fread(&s1, sizeof(ogrenci), 1, file2);
-                        printf("| %*d %*d %*d  |\n", 7, s1.ogrNo, 12, s1.dersKodu, 12, s1.puan);
-
+                    if(s[i].offset > s[j].offset)
+                    {
+                        s1 = s[i];
+                        s[i] = s[j];
+                        s[j] = s1;
+                    }
                 }
-            }*/
-            //fclose(file2);
-            //fclose(file3);
-
-            //remove("kayitlar.bin");
-            //rename("temp.bin", "kayitlar.bin");
+            }
+            file2 = fopen("kayitlar.bin", "wb");
+            for(int i=0; i<count-1; i++)
+            {
+                fwrite(&s[i], sizeof(ogrenci), 1, file2);
+            }
+            fclose(file2);
             break;
         }
         else
