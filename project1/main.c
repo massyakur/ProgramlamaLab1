@@ -10,7 +10,88 @@ typedef struct Kayit
     int puan;
     int offset;
 }ogrenci;
+void counter()
+{
+    FILE *file;
+    file = fopen("kayitlar.bin", "rb");
+    /*
+    while(fread(&s1, sizeof(ogrenci), 1, file)){
+        count += sizeof(s1);
+    }
+    count = count/sizeof(ogrenci);
+    */
+    printf("\n-------------------------\n");
+    fseek(file, 0, SEEK_END);
+    count = ftell(file)/sizeof(ogrenci);
+    printf("\n%d Kayit bulunmaktadir.\n", count);
+    fclose(file);
+}
 
+void indexDosyasiOlustur()
+{
+    ogrenci *s, s1;
+    FILE *file, *file2;
+    int i=0, j;
+    file = fopen("kayitlar.bin", "rb");
+    file2 = fopen("index.txt", "w");
+    s = (ogrenci*)calloc(count, sizeof(ogrenci));
+    while(fread(&s[i], sizeof(ogrenci), 1, file))
+    {
+        s[i].offset = ftell(file)-sizeof(ogrenci);
+        i++;
+    }
+    fclose(file);
+
+    for(i=0; i<count; i++)
+    {
+        for(j=i+1; j<count; j++)
+        {
+            if(s[i].ogrNo > s[j].ogrNo)
+            {
+                s1 = s[i];
+                s[i] = s[j];
+                s[j] = s1;
+            }
+        }
+    }
+    file2 = fopen("index.txt", "w");
+    for(i=0; i<count; i++)
+    {
+        fprintf(file2, "%d\t%d\n", s[i].ogrNo, s[i].offset);
+    }
+    fclose(file2);
+    printf("\nindex.txt BASARIYLA OLUSTURULMUSTUR!\n");
+
+    /*int i, j, temp, temp2;
+    diziYap();
+    file2 = fopen("index.txt", "r");
+    for(i = 0; i<count; i++)
+    {
+        fscanf(file, "%d %d", &ogrNo[i], &offset[i]);
+    }
+    fclose(file2);
+    for(i = 0; i<count; i++)
+    {
+        for(j = i+1; j<count; j++)
+        {
+            if(ogrNo[i] > ogrNo[j])
+            {
+                temp = ogrNo[i];
+                temp2 = offset[i];
+                ogrNo[i] = ogrNo[j];
+                offset[i] = offset[j];
+                ogrNo[j] = temp;
+                offset[j] = temp2;
+            }
+        }
+    }
+    file2 = fopen("index.txt", "w");
+    for(i = 0; i < count; i++)
+    {
+        fprintf(file2, "%d\t%d\n", ogrNo[i], offset[i]);
+    }
+    */
+}
 void kayitOlustur()
 {
     ogrenci *s;
@@ -43,24 +124,7 @@ void kayitOlustur()
     indexDosyasiOlustur();
 }
 
-void counter()
-{
-    ogrenci s1;
-    int i=0;
-    FILE *file;
-    file = fopen("kayitlar.bin", "rb");
-    /*
-    while(fread(&s1, sizeof(ogrenci), 1, file)){
-        count += sizeof(s1);
-    }
-    count = count/sizeof(ogrenci);
-    */
-    printf("\n-------------------------\n");
-    fseek(file, 0, SEEK_END);
-    count = ftell(file)/sizeof(ogrenci);
-    printf("\n%d Kayit bulunmaktadir.\n", count);
-    fclose(file);
-}
+
 
 void kayitEkle()
 {
@@ -132,14 +196,13 @@ void kayitBul()
 
             for(int i=0; i<=high; i++) //Eger ayni ogrNo birden fazla varsa asagida yazilacaktir
             {
-                if(search == ogrNo[i])
+                if(search == ogrNo[i] && mid != i)
                 {
-                    if(mid != i)
-                    {
+
                         fseek(file2, offset[i], SEEK_SET);
                         fread(&s1, sizeof(ogrenci), 1, file2);
                         printf("| %*d %*d %*d  |\n", 7, s1.ogrNo, 12, s1.dersKodu, 12, s1.puan);
-                    }
+
                 }
             }
             break;
@@ -161,58 +224,89 @@ void kayitBul()
 void kayitSil()
 {
     ogrenci s1;
-    int search, found;
+    int search, n;
     printf("SILMEK ICIN OGRENCI NO YAZINIZ : ");
     scanf("%d", &search);
-    int ogrNo, offset;
+    int *ogrNo, *offset;
     FILE *file, *file2, *file3;
-    //file = fopen("index.txt", "r");
+    file = fopen("index.txt", "r");
+    ogrNo = (int*)calloc(count, sizeof(int));
+    offset = (int*)calloc(count, sizeof(int));
+    for(int i = 0; i < count; i++)
+        {
+            fscanf(file, "%d %d", &ogrNo[i], &offset[i]);
+        }
+    fclose(file);
     file2 = fopen("kayitlar.bin", "rb");
     file3 = fopen("temp.bin", "wb");
-    if(file==NULL)
-        printf("\nDOSYA BULUNAMADI!\n");
-    else
+    int low = 0, high = count-1, mid = (low+high)/2;
+    while(low<=high)
     {
-        while(fread(&s1, sizeof(ogrenci), 1, file2))
+        if(ogrNo[mid]<search)
+            low = mid+1;
+        else if(ogrNo[mid]==search)
         {
-            if(search==s1.ogrNo)
+            for(int i=4; i>0; i--)
             {
-                found = 1;
+                fseek(file2, offset[mid-i], SEEK_CUR);
+                fread(&s1, sizeof(ogrenci), 1, file2);
+                printf("%d %d %d %d\n", s1.ogrNo, s1.dersKodu, s1.puan, offset[mid]);
+                n = ftell(file2)/sizeof(ogrenci);
+                printf("%d\n", n);
+                rewind(file2);
             }
-            else
+
+            /*while(fread(&s1, sizeof(ogrenci), 1, file2))
+            {
                 fwrite(&s1, sizeof(ogrenci), 1, file3);
-        }
-        //fclose(file);
-        fclose(file2);
-        fclose(file3);
-        if(found)
-        {
-            file2 = fopen("kayitlar.bin", "wb");
-            file3 = fopen("temp.bin", "rb");
-            while(fread(&s1, sizeof(ogrenci), 1, file3))
-            {
-                fwrite(&s1, sizeof(ogrenci), 1, file2);
             }
-            fclose(file2);
-            fclose(file3);
+
+            fseek(file2, (offset[mid]+sizeof(ogrenci)), SEEK_CUR);
+            while(fread(&s1, sizeof(ogrenci), 1, file2)){
+                fwrite(&s1, sizeof(ogrenci), 1, file3);
+            }*/
+            /*for(int i=0; i<=high; i++) //Eger ayni ogrNo birden fazla varsa asagida yazilacaktir
+            {
+                if(search == ogrNo[i] && mid != i)
+                {
+
+                        fseek(file2, offset[i], SEEK_SET);
+                        fread(&s1, sizeof(ogrenci), 1, file2);
+                        printf("| %*d %*d %*d  |\n", 7, s1.ogrNo, 12, s1.dersKodu, 12, s1.puan);
+
+                }
+            }*/
+            //fclose(file2);
+            //fclose(file3);
+
+            //remove("kayitlar.bin");
+            //rename("temp.bin", "kayitlar.bin");
+            break;
         }
-        else{
-            printf("|%*d NOLU OGRENCI BULUNAMADI!   |\n", 8, search);
-        }
+        else
+        high = mid-1;
+        mid=(low+high)/2;
     }
+    if(low>high)
+    {
+        printf("|\t\t\t\t     |\n");
+        printf("|%*d NOLU OGRENCI BULUNAMADI!   |\n", 8, search);
+        printf("|\t\t\t\t     |\n");
+    }
+
     counter();
     indexDosyasiOlustur();
 }
 void kayitGuncelle()
 {
     ogrenci s1;
-    int search, found;
+    int search, puan;
     int *ogrNo, *offset;
 
     printf("PUAN DEGISTIRMEK ICIN OGRENCI NO YAZINIZ : ");
     scanf("%d", &search);
 
-    FILE *file, *file2, *file3;
+    FILE *file, *file2;
 
     ogrNo = (int*)calloc(count, sizeof(int));
     offset = (int*)calloc(count, sizeof(int));
@@ -224,7 +318,7 @@ void kayitGuncelle()
         }
     fclose(file);
 
-    file2 = fopen("kayitlar.bin", "rb+");
+    file2 = fopen("kayitlar.bin", "ab+");
 
     int low = 0, high = count-1, mid = (low+high)/2;
     while(low<=high)
@@ -234,13 +328,15 @@ void kayitGuncelle()
         else if(ogrNo[mid]==search)
         {
             //Binary search ile ilk bulunan veri
+
             fseek(file2, offset[mid], SEEK_SET);
             fread(&s1, sizeof(ogrenci), 1, file2);
             printf("Puan giriniz : ");
-            scanf("%d", &s1.puan);
-
+            scanf("%d", &puan);
+            s1.puan = puan;
             fseek(file2, offset[mid], SEEK_SET);
             fwrite(&s1, sizeof(ogrenci), 1, file2);
+
 
             for(int i=0; i<=high; i++) //Eger ayni ogrNo birden fazla varsa asagida yazilacaktir
             {
@@ -254,10 +350,12 @@ void kayitGuncelle()
                         scanf("%d", &s1.puan);
                         fseek(file2, offset[mid], SEEK_SET);
                         fwrite(&s1, sizeof(ogrenci), 1, file2);
+
                     }
                 }
             }
             break;
+            fclose(file2);
         }
         else
         high = mid-1;
@@ -270,15 +368,13 @@ void kayitGuncelle()
         printf("|\t\t\t\t     |\n");
     }
     printf("======================================\n");
-    fclose(file2);
-
+    indexDosyasiOlustur();
 
 }
 
 void veriDosyasiniGoster()
 {
     ogrenci s1;
-    int i=0;
     FILE *file;
     file = fopen("kayitlar.bin", "rb");
     printf("\n--------------------------------------\n");
@@ -328,71 +424,7 @@ void indeksDosyasiniSil()
     else
         printf("\nDOSYA BULUNAMADI/SILINEMEDI!\n");
 }
-void indexDosyasiOlustur()
-{
-    ogrenci *s, s1;
-    FILE *file, *file2;
-    int i=0, j;
-    file = fopen("kayitlar.bin", "rb");
-    file2 = fopen("index.txt", "w");
-    s = (ogrenci*)calloc(count, sizeof(ogrenci));
-    while(fread(&s[i], sizeof(ogrenci), 1, file))
-    {
-        s[i].offset = ftell(file)-sizeof(ogrenci);
-        i++;
-    }
-    fclose(file);
 
-    for(i=0; i<count; i++)
-    {
-        for(j=i+1; j<count; j++)
-        {
-            if(s[i].ogrNo > s[j].ogrNo)
-            {
-                s1 = s[i];
-                s[i] = s[j];
-                s[j] = s1;
-            }
-        }
-    }
-    file2 = fopen("index.txt", "w");
-    for(i=0; i<count; i++)
-    {
-        fprintf(file2, "%d\t%d\n", s[i].ogrNo, s[i].offset);
-    }
-    fclose(file2);
-    printf("\nindex.txt BASARIYLA OLUSTURULMUSTUR!\n");
-
-    /*int i, j, temp, temp2;
-    diziYap();
-    file2 = fopen("index.txt", "r");
-    for(i = 0; i<count; i++)
-    {
-        fscanf(file, "%d %d", &ogrNo[i], &offset[i]);
-    }
-    fclose(file2);
-    for(i = 0; i<count; i++)
-    {
-        for(j = i+1; j<count; j++)
-        {
-            if(ogrNo[i] > ogrNo[j])
-            {
-                temp = ogrNo[i];
-                temp2 = offset[i];
-                ogrNo[i] = ogrNo[j];
-                offset[i] = offset[j];
-                ogrNo[j] = temp;
-                offset[j] = temp2;
-            }
-        }
-    }
-    file2 = fopen("index.txt", "w");
-    for(i = 0; i < count; i++)
-    {
-        fprintf(file2, "%d\t%d\n", ogrNo[i], offset[i]);
-    }
-    */
-}
 
 int main()
 {
@@ -467,5 +499,3 @@ int main()
     }
     fclose(file);
 }*/
-
-
