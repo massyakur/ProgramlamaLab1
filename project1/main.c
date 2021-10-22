@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 int count = 0;
-//int *ogrNo, *offset;
 
 typedef struct Kayit
 {
@@ -123,8 +122,6 @@ void kayitOlustur()
     counter();
     indexDosyasiOlustur();
 }
-
-
 
 void kayitEkle()
 {
@@ -248,26 +245,26 @@ void kayitSil()
             low = mid+1;
         else if(ogrNo[mid]==search)
         {
-            for(int i=mid; i>0; i--)
+            for(int i=mid; i>0; i--) //for bottom
             {
                 fseek(file2, offset[mid-i], SEEK_CUR);
                 fread(&s1, sizeof(ogrenci), 1, file2);
-                //printf("%d %d %d %d\n", s1.ogrNo, s1.dersKodu, s1.puan, offset[mid-i]);
-                s[j].ogrNo = s1.ogrNo;
-                s[j].dersKodu = s1.dersKodu;
-                s[j].puan = s1.puan;
+                s[j] = s1;
+                //s[j].ogrNo = s1.ogrNo;
+                //s[j].dersKodu = s1.dersKodu;
+                //s[j].puan = s1.puan;
                 s[j].offset = offset[mid-i];
                 j++;
                 rewind(file2);
             }
-            for(int i=mid; i<len-1; i++)
+            for(int i=mid; i<len-1; i++) //for up
             {
                 fseek(file2, offset[i+1], SEEK_CUR);
                 fread(&s1, sizeof(ogrenci), 1, file2);
-                //printf("%d %d %d %d\n", s1.ogrNo, s1.dersKodu, s1.puan, offset[i+1]);
-                s[j].ogrNo = s1.ogrNo;
-                s[j].dersKodu = s1.dersKodu;
-                s[j].puan = s1.puan;
+                s[j] = s1;
+                //s[j].ogrNo = s1.ogrNo;
+                //s[j].dersKodu = s1.dersKodu;
+                //s[j].puan = s1.puan;
                 s[j].offset = offset[i+1];
                 j++;
                 rewind(file2);
@@ -309,9 +306,8 @@ void kayitSil()
 }
 void kayitGuncelle()
 {
-    ogrenci s1;
-    int search, puan;
-    int *ogrNo, *offset;
+    ogrenci s1, s;
+    int *ogrNo, *offset, search;
 
     printf("PUAN DEGISTIRMEK ICIN OGRENCI NO YAZINIZ : ");
     scanf("%d", &search);
@@ -327,9 +323,7 @@ void kayitGuncelle()
             fscanf(file, "%d %d", &ogrNo[i], &offset[i]);
         }
     fclose(file);
-
-    file2 = fopen("kayitlar.bin", "ab+");
-
+    file2 = fopen("kayitlar.bin", "rb+");
     int low = 0, high = count-1, mid = (low+high)/2;
     while(low<=high)
     {
@@ -338,34 +332,30 @@ void kayitGuncelle()
         else if(ogrNo[mid]==search)
         {
             //Binary search ile ilk bulunan veri
-
             fseek(file2, offset[mid], SEEK_SET);
             fread(&s1, sizeof(ogrenci), 1, file2);
-            printf("Puan giriniz : ");
-            scanf("%d", &puan);
-            s1.puan = puan;
+            s = s1;
+            printf("Puani giriniz: ");
+            scanf("%d", &s.puan);
             fseek(file2, offset[mid], SEEK_SET);
-            fwrite(&s1, sizeof(ogrenci), 1, file2);
-
+            fwrite(&s, sizeof(ogrenci), 1, file2);
 
             for(int i=0; i<=high; i++) //Eger ayni ogrNo birden fazla varsa asagida yazilacaktir
             {
-                if(search == ogrNo[i])
+                if(search == ogrNo[i] && mid != i)
                 {
-                    if(mid != i)
-                    {
-                        fseek(file2, offset[mid], SEEK_SET);
-                        fread(&s1, sizeof(ogrenci), 1, file2);
-                        printf("Puan giriniz : ");
-                        scanf("%d", &s1.puan);
-                        fseek(file2, offset[mid], SEEK_SET);
-                        fwrite(&s1, sizeof(ogrenci), 1, file2);
 
-                    }
+                    fseek(file2, offset[i], SEEK_SET);
+                    fread(&s1, sizeof(ogrenci), 1, file2);
+                    s = s1;
+                    printf("Puani giriniz: ");
+                    scanf("%d", &s.puan);
+                    fseek(file2, offset[i], SEEK_SET);
+                    fwrite(&s, sizeof(ogrenci), 1, file2);
+
                 }
             }
             break;
-            fclose(file2);
         }
         else
         high = mid-1;
@@ -378,7 +368,7 @@ void kayitGuncelle()
         printf("|\t\t\t\t     |\n");
     }
     printf("======================================\n");
-    indexDosyasiOlustur();
+    fclose(file2);
 
 }
 
