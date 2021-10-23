@@ -290,6 +290,7 @@ void kayitSil()
                 fwrite(&s[i], sizeof(ogrenci), 1, file2);
             }
             fclose(file2);
+            printf("\n%d numarali ogrenci basariyla silindi!\n", search);
             break;
         }
         else
@@ -434,7 +435,7 @@ void indeksDosyasiniGoster()
     else
     {
         printf("\n------------------------\n");
-        printf("| Ogrenci No\tAdres |");
+        printf("| Ogrenci No\tAdres  |");
         printf("\n------------------------\n");
         for(int i = 0; i < count; i++)
         {
