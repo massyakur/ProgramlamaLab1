@@ -459,7 +459,7 @@ void indeksDosyasiniSil()
         printf("======================================\n");
     }
     else
-        printf("\nDOSYA BULUNAMADI/SILINEMEDI!\n");
+        printf("\n  DOSYA BULUNAMADI/SILINEMEDI!\n");
 }
 
 int main()
